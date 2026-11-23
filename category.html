@@ -13,12 +13,16 @@
 <body>
   <header class="collection-bar">
     <a class="wordmark" href="index.html">In Progress</a>
-    <a href="index.html">Back to shelf</a>
+    <div class="collection-tools">
+      <button class="sound" type="button" aria-pressed="true">Sound on</button>
+      <a href="index.html">Back to shelf</a>
+    </div>
   </header>
   <main class="collection">
     <header class="collection-intro">
       <h1 id="collection-name">Collection</h1>
       <p id="collection-description"></p>
+      <a id="next-collection" hidden></a>
     </header>
     <div class="gallery" id="gallery"></div>
     <noscript>Enable JavaScript to view this collection.</noscript>

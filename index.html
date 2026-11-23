@@ -12,12 +12,23 @@
 </head>
 <body>
   <main class="home">
+    <div class="shelf-bar">
+      <span>The collection</span>
+      <button class="sound" type="button" aria-pressed="true">Sound on</button>
+    </div>
     <header class="intro">
+      <div>
       <h1>In Progress</h1>
       <p>A home for unfinished ideas.</p>
+      </div>
+      <div class="record-study" aria-hidden="true">
+        <div class="disc"><i></i></div>
+        <div class="paper-cover"></div>
+      </div>
     </header>
 
     <nav class="record-rack" aria-label="Categories">
+      <div class="rack-heading"><h2>Browse the shelf</h2><span id="shelf-count"></span></div>
       <div class="shelf-window" id="shelf-window">
         <ul class="sleeves" id="sleeves"></ul>
       </div>
