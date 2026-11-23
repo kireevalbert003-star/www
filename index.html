@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Browse a shelf of unfinished ideas, visual experiments and creative references.">
+  <title>In Progress — The shelf</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="data.js"></script>
+  <script defer src="script.js"></script>
+</head>
+<body>
+  <main class="home">
+    <header class="intro">
+      <h1>In Progress</h1>
+      <p>A home for unfinished ideas.</p>
+    </header>
+
+    <nav class="record-rack" aria-label="Categories">
+      <div class="shelf-window" id="shelf-window">
+        <ul class="sleeves" id="sleeves"></ul>
+      </div>
+      <div class="rail" aria-hidden="true"></div>
+      <div class="shelf-controls" hidden>
+        <button type="button" id="previous" aria-label="Scroll shelf left" aria-controls="shelf-window">←</button>
+        <button type="button" id="next" aria-label="Scroll shelf right" aria-controls="shelf-window">→</button>
+      </div>
+    </nav>
+    <noscript>Enable JavaScript to browse the shelf.</noscript>
+  </main>
+</body>
+</html>
