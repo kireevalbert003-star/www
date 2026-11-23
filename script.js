@@ -92,7 +92,8 @@ try { soundOn = localStorage.getItem("shelf-sound") !== "off"; } catch {}
 const soundButton = document.querySelector(".sound");
 
 function showSoundState() {
-  soundButton.textContent = soundOn ? "Sound on" : "Sound off";
+  const needsGesture = shelf && soundOn && navigator.userActivation && !navigator.userActivation.hasBeenActive;
+  soundButton.textContent = needsGesture ? "Enable sound" : soundOn ? "Sound on" : "Sound off";
   soundButton.setAttribute("aria-pressed", String(soundOn));
 }
 
@@ -122,17 +123,47 @@ function rustle() {
 
 showSoundState();
 soundButton.addEventListener("click", () => {
-  soundOn = !soundOn;
+  soundOn = soundButton.textContent === "Enable sound" || !soundOn;
   try { localStorage.setItem("shelf-sound", soundOn ? "on" : "off"); } catch {}
   showSoundState();
   if (soundOn) rustle();
 });
 
+if (shelf) {
+  // Unlock audio on the first gesture; never queue earlier hover sounds.
+  function unlock(event) {
+    if (event.target.closest(".sound") || !soundOn) return;
+    try {
+      audio ??= new AudioContext();
+      if (audio.state !== "running") audio.resume().catch(() => {});
+    } catch {}
+    showSoundState();
+  }
+  document.addEventListener("click", unlock);
+  document.addEventListener("keydown", unlock);
+
+  for (const sleeve of shelf.querySelectorAll(".sleeve")) {
+    function lift() {
+      if (soundOn && (audio?.state === "running" || navigator.userActivation?.hasBeenActive)) rustle();
+    }
+    sleeve.addEventListener("pointerenter", event => {
+      if (event.pointerType === "mouse" && !sleeve.matches(":focus-visible")) lift();
+    });
+    sleeve.addEventListener("focus", () => {
+      if (sleeve.matches(":focus-visible") && !sleeve.matches(":hover")) lift();
+    });
+    sleeve.addEventListener("pointerdown", event => {
+      if (event.pointerType !== "mouse") lift();
+    });
+  }
+}
+
 let travel;
 document.addEventListener("click", event => {
   const link = event.target.closest(".sleeve, #next-collection, .collection-bar a");
   if (!link || event.defaultPrevented || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
-  if (soundOn && rustle()) {
+  const needsClickSound = !link.matches(".sleeve") || !audio || audio.state !== "running";
+  if (soundOn && (needsClickSound ? rustle() : true)) {
     event.preventDefault();
     clearTimeout(travel);
     travel = setTimeout(() => location.assign(link.href), 135);
