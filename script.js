@@ -49,40 +49,233 @@ function setUpShelfScroll() {
   updateControls();
 }
 
-if (gallery) {
-  // Один шаблон страницы обслуживает все адреса категорий.
-  const id = new URLSearchParams(window.location.search).get("id");
-  const collection = collections.find(item => item.id === id);
+const params = new URLSearchParams(location.search);
+const samplePosts = collections.flatMap(collection => collection.posts.map(post => ({
+  id: post.image,
+  category: collection.id,
+  title: post.title,
+  author: "In Progress Studio",
+  description: post.note,
+  date: "2026-11-23",
+  tags: [],
+  images: [{ src: `assets/gallery/${post.image}.jpg`, width: 412, height: 412, alt: post.alt }]
+})));
+
+let database;
+function openDatabase() {
+  if (database) return database;
+  database = new Promise((resolve, reject) => {
+    const request = indexedDB.open("in-progress-publications", 1);
+    request.onupgradeneeded = () => request.result.createObjectStore("posts", { keyPath: "id" });
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  return database;
+}
+
+async function readLocalPosts() {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const request = db.transaction("posts").objectStore("posts").getAll();
+    request.onsuccess = () => resolve(request.result.sort((a, b) => b.date.localeCompare(a.date)));
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function savePost(post) {
+  const db = await openDatabase();
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction("posts", "readwrite");
+    tx.oncomplete = resolve;
+    tx.onabort = () => reject(tx.error);
+    tx.objectStore("posts").add(post);
+  });
+}
+
+function collectionUrl(id) {
+  return "category.html?id=" + encodeURIComponent(id);
+}
+
+function postUrl(post) {
+  return collectionUrl(post.category) + "&post=" + encodeURIComponent(post.id);
+}
+
+function fillImage(img, picture) {
+  img.width = picture.width;
+  img.height = picture.height;
+  img.alt = picture.alt;
+  img.src = picture.src || URL.createObjectURL(picture.blob);
+}
+
+async function showPublications() {
   const heading = document.querySelector("#collection-name");
   const description = document.querySelector("#collection-description");
+  const setIntro = (name, text) => {
+    heading.textContent = name;
+    description.textContent = text;
+    document.title = name + " — In Progress";
+  };
 
-  if (collection) {
-    if (collections.length > 1) {
-      const next = collections[(collections.indexOf(collection) + 1) % collections.length];
-      const link = document.querySelector("#next-collection");
-      link.textContent = "Next: " + next.name;
-      link.href = "category.html?id=" + encodeURIComponent(next.id);
-      link.hidden = false;
-    }
-    document.title = collection.name + " — In Progress";
-    heading.textContent = collection.name;
-    description.textContent = collection.about;
-    const template = document.querySelector("#publication");
-
-    for (const post of collection.posts) {
-      const card = template.content.cloneNode(true);
-      const image = card.querySelector("img");
-      image.src = `assets/gallery/${post.image}.jpg`;
-      image.alt = post.alt;
-      card.querySelector("h2").textContent = post.title;
-      card.querySelector("p").textContent = post.note;
-      gallery.append(card);
-    }
-  } else {
-    document.title = "Collection not found — In Progress";
-    heading.textContent = "Collection not found";
-    description.textContent = "Return to the shelf to choose a collection.";
+  if (params.get("view") === "upload") {
+    setIntro("Upload idea", "Saved in this browser profile, on this site.");
+    gallery.hidden = true;
+    setupUpload();
+    return;
   }
+
+  const collection = collections.find(item => item.id === params.get("id"));
+  let localPosts = [];
+  try { localPosts = await readLocalPosts(); }
+  catch { document.querySelector("#notice").textContent = "Local storage is unavailable. Showing studio publications."; }
+  const posts = [...localPosts, ...samplePosts];
+
+  if (params.has("post")) {
+    gallery.hidden = true;
+    const post = posts.find(item => item.id === params.get("post") && item.category === collection?.id);
+    if (!post) {
+      setIntro("Idea not found", "Local ideas are available in the browser where they were published.");
+      return;
+    }
+    setIntro(post.title, post.description);
+    document.querySelector("#detail").hidden = false;
+    const back = document.querySelector("#back-collection");
+    back.href = collectionUrl(post.category);
+    back.textContent = "Back to " + collection.name;
+    const date = new Intl.DateTimeFormat("en", { dateStyle: "medium", timeZone: "UTC" }).format(new Date(post.date));
+    document.querySelector("#credits").textContent = [post.author, collection.name, date].join(" · ");
+    document.querySelector("#tags").textContent = post.tags.map(tag => "#" + tag).join("  ");
+    for (const picture of post.images) {
+      const img = document.createElement("img");
+      img.loading = "lazy";
+      fillImage(img, picture);
+      document.querySelector("#plates").append(img);
+    }
+    return;
+  }
+
+  const all = params.get("view") === "all";
+  if (!all && !collection) {
+    setIntro("Collection not found", "Return to the shelf to choose a collection.");
+    return;
+  }
+  if (all) setIntro("All ideas", "The complete collection.");
+  else {
+    setIntro(collection.name, collection.about);
+    const next = collections[(collections.indexOf(collection) + 1) % collections.length];
+    const link = document.querySelector("#next-collection");
+    link.textContent = "Next: " + next.name;
+    link.href = collectionUrl(next.id);
+    link.hidden = collections.length < 2;
+  }
+
+  const template = document.querySelector("#publication");
+  for (const post of posts.filter(item => all || item.category === collection.id)) {
+    const card = template.content.cloneNode(true);
+    card.querySelector("a").href = postUrl(post);
+    fillImage(card.querySelector("img"), post.images[0]);
+    card.querySelector("h2").textContent = post.title;
+    card.querySelector("p").textContent = post.author;
+    gallery.append(card);
+  }
+}
+
+function setupUpload() {
+  const form = document.querySelector("#idea-form");
+  const fields = form.elements;
+  const previews = document.querySelector("#previews");
+  const message = document.querySelector("#form-message");
+  const submit = form.querySelector("button[type=submit]");
+  form.hidden = false;
+  for (const category of collections.filter(item => ["ai-generated", "photo", "site-inspirations"].includes(item.id))) {
+    fields.category.add(new Option(category.name, category.id));
+  }
+
+  const pictures = [];
+  let pending = 0;
+  async function addFiles(files) {
+    pending++;
+    submit.disabled = true;
+    message.textContent = "";
+    for (const file of files) {
+      if (!["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"].includes(file.type)) {
+        message.textContent = "Choose a JPG, PNG, WebP, GIF or AVIF image.";
+        continue;
+      }
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.src = url;
+      try {
+        await img.decode();
+        const picture = { blob: file, width: img.naturalWidth, height: img.naturalHeight, alt: file.name };
+        pictures.push(picture);
+        const tile = document.createElement("figure");
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.textContent = "Remove";
+        remove.setAttribute("aria-label", "Remove " + file.name);
+        remove.onclick = () => {
+          pictures.splice(pictures.indexOf(picture), 1);
+          tile.remove();
+          URL.revokeObjectURL(url);
+        };
+        img.alt = file.name;
+        tile.append(img, remove);
+        previews.append(tile);
+      } catch {
+        URL.revokeObjectURL(url);
+        message.textContent = "Could not read " + file.name + ". Try a different image.";
+      }
+    }
+    pending--;
+    submit.disabled = pending > 0;
+  }
+
+  fields.files.onchange = () => {
+    addFiles(Array.from(fields.files.files));
+    fields.files.value = "";
+  };
+  const drop = form.querySelector(".drop-area");
+  drop.ondragover = event => { event.preventDefault(); drop.classList.add("over"); };
+  drop.ondragleave = () => drop.classList.remove("over");
+  drop.ondrop = event => {
+    event.preventDefault();
+    drop.classList.remove("over");
+    addFiles(Array.from(event.dataTransfer.files));
+  };
+
+  form.onsubmit = async event => {
+    event.preventDefault();
+    if (submit.disabled) return;
+    const title = fields.title.value.trim();
+    const author = fields.author.value.trim();
+    const description = fields.description.value.trim();
+    if (!pictures.length || !title || !author || !description) {
+      message.textContent = "Add an image, a title, an author and a description.";
+      return;
+    }
+    submit.disabled = true;
+    try {
+      const post = {
+        id: crypto.randomUUID(), title, author, description,
+        category: fields.category.value,
+        date: new Date().toISOString(),
+        tags: fields.tags.value.split(",").map(tag => tag.trim()).filter(Boolean),
+        images: pictures.slice()
+      };
+      await savePost(post);
+      location.assign(collectionUrl(post.category));
+    } catch {
+      message.textContent = "Could not save in this browser. Check available storage and try again.";
+      submit.disabled = false;
+    }
+  };
+}
+
+if (gallery) {
+  showPublications();
+  window.addEventListener("pageshow", event => {
+    if (event.persisted && params.get("view") !== "upload") location.reload();
+  });
 }
 
 // A short burst of filtered noise sounds like a paper sleeve sliding.

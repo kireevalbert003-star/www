@@ -14,6 +14,8 @@
   <header class="collection-bar">
     <a class="wordmark" href="index.html">In Progress</a>
     <div class="collection-tools">
+      <a href="category.html?view=all">All ideas</a>
+      <a href="category.html?view=upload">Upload idea</a>
       <button class="sound" type="button" aria-pressed="true">Sound on</button>
       <a href="index.html">Back to shelf</a>
     </div>
@@ -25,13 +27,35 @@
       <a id="next-collection" hidden></a>
     </header>
     <div class="gallery" id="gallery"></div>
+    <p id="notice" role="status"></p>
+    <section id="detail" hidden>
+      <a id="back-collection">Back to collection</a>
+      <p id="credits"></p>
+      <p id="tags"></p>
+      <div id="plates"></div>
+    </section>
+    <form id="idea-form" hidden>
+      <label class="drop-area">Drop images here or choose files
+        <input type="file" name="files" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" multiple>
+      </label>
+      <div id="previews"></div>
+      <label>Title<input name="title" required maxlength="140"></label>
+      <label>Author<input name="author" required maxlength="80"></label>
+      <label>Description<textarea name="description" rows="3" required maxlength="2000"></textarea></label>
+      <label>Category<select name="category" required></select></label>
+      <label>Tags (optional, separated by commas)<input name="tags" maxlength="250"></label>
+      <p role="status" id="form-message"></p>
+      <button type="submit">Publish idea</button>
+    </form>
     <noscript>Enable JavaScript to view this collection.</noscript>
   </main>
   <template id="publication">
     <article class="publication">
-      <img width="512" height="512" alt="">
-      <h2></h2>
-      <p></p>
+      <a class="post-link">
+        <img loading="lazy" decoding="async" alt="">
+        <h2></h2>
+        <p></p>
+      </a>
     </article>
   </template>
 </body>
