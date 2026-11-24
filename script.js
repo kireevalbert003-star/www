@@ -56,10 +56,10 @@ const samplePosts = collections.flatMap(collection => collection.posts.map(post 
   title: post.title,
   author: "In Progress Studio",
   description: post.note,
-  date: "2026-11-23",
+  date: post.date || "2026-11-23",
   tags: [],
-  images: [{ src: `assets/gallery/${post.image}.jpg`, width: 412, height: 412, alt: post.alt }]
-})));
+  images: [{ src: `assets/gallery/${post.image}.jpg`, width: post.width || 412, height: post.height || 412, alt: post.alt }]
+}))).sort((a, b) => b.date.localeCompare(a.date));
 
 let database;
 function openDatabase() {
@@ -107,6 +107,30 @@ function fillImage(img, picture) {
   img.src = picture.src || URL.createObjectURL(picture.blob);
 }
 
+function thumbnail(post) {
+  const link = document.createElement("a");
+  const image = document.createElement("img");
+  link.href = postUrl(post);
+  link.setAttribute("aria-label", post.title);
+  image.loading = "lazy";
+  fillImage(image, post.images[0]);
+  link.append(image);
+  return link;
+}
+
+async function showRecent() {
+  let local = [];
+  try { local = await readLocalPosts(); } catch {}
+  for (const post of [...local, ...samplePosts].slice(0, 4)) {
+    const link = thumbnail(post);
+    const title = document.createElement("strong");
+    title.textContent = post.title;
+    link.append(title);
+    document.querySelector("#recent-ideas").append(link);
+  }
+}
+if (shelf) showRecent();
+
 async function showPublications() {
   const heading = document.querySelector("#collection-name");
   const description = document.querySelector("#collection-description");
@@ -117,6 +141,7 @@ async function showPublications() {
   };
 
   if (params.get("view") === "upload") {
+    document.body.classList.add("upload-view");
     setIntro("Upload idea", "Saved in this browser profile, on this site.");
     gallery.hidden = true;
     setupUpload();
@@ -158,7 +183,18 @@ async function showPublications() {
     setIntro("Collection not found", "Return to the shelf to choose a collection.");
     return;
   }
-  if (all) setIntro("All ideas", "The complete collection.");
+  if (all) {
+    document.body.classList.add("wall-view");
+    setIntro("All ideas", "");
+    const index = document.querySelector("#category-index");
+    index.hidden = false;
+    for (const group of collections) {
+      const link = document.createElement("a");
+      link.href = collectionUrl(group.id);
+      link.textContent = group.name;
+      index.append(link);
+    }
+  }
   else {
     setIntro(collection.name, collection.about);
     const next = collections[(collections.indexOf(collection) + 1) % collections.length];
@@ -177,6 +213,29 @@ async function showPublications() {
     card.querySelector("p").textContent = post.author;
     gallery.append(card);
   }
+  if (all) arrangeWall();
+}
+
+function arrangeWall() {
+  const cards = Array.from(gallery.children);
+  let lastWidth = 0;
+  function layout() {
+    const width = gallery.clientWidth;
+    if (!width || width === lastWidth) return;
+    lastWidth = width;
+    const count = Number(getComputedStyle(gallery).getPropertyValue("--wall-columns"));
+    const stacks = Array.from({length: count}, () => document.createElement("div"));
+    const heights = Array(count).fill(0);
+    for (const card of cards) {
+      const column = heights.indexOf(Math.min(...heights));
+      const image = card.querySelector("img");
+      stacks[column].append(card);
+      heights[column] += width / count * image.getAttribute("height") / image.getAttribute("width") + 58;
+    }
+    gallery.replaceChildren(...stacks);
+  }
+  layout();
+  new ResizeObserver(layout).observe(gallery);
 }
 
 function setupUpload() {
@@ -186,9 +245,15 @@ function setupUpload() {
   const message = document.querySelector("#form-message");
   const submit = form.querySelector("button[type=submit]");
   form.hidden = false;
+  document.querySelector("#inspiration").hidden = false;
+  for (const id of ["alpine-hour", "concrete-arc", "linen-field", "sea-line"]) {
+    const post = samplePosts.find(item => item.id === id);
+    if (post) document.querySelector(".moodboard").append(thumbnail(post));
+  }
   for (const category of collections.filter(item => ["ai-generated", "photo", "site-inspirations"].includes(item.id))) {
     fields.category.add(new Option(category.name, category.id));
   }
+  fields.category.value = "photo";
 
   const pictures = [];
   let pending = 0;
@@ -208,10 +273,13 @@ function setupUpload() {
         await img.decode();
         const picture = { blob: file, width: img.naturalWidth, height: img.naturalHeight, alt: file.name };
         pictures.push(picture);
+        if (pictures.length === 1 && !fields.title.value.trim()) {
+          fields.title.value = file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").slice(0, 140);
+        }
         const tile = document.createElement("figure");
         const remove = document.createElement("button");
         remove.type = "button";
-        remove.textContent = "Remove";
+        remove.textContent = "×";
         remove.setAttribute("aria-label", "Remove " + file.name);
         remove.onclick = () => {
           pictures.splice(pictures.indexOf(picture), 1);
@@ -246,11 +314,11 @@ function setupUpload() {
   form.onsubmit = async event => {
     event.preventDefault();
     if (submit.disabled) return;
-    const title = fields.title.value.trim();
-    const author = fields.author.value.trim();
+    const title = fields.title.value.trim() || "Untitled study";
+    const author = fields.author.value.trim() || "Anonymous";
     const description = fields.description.value.trim();
-    if (!pictures.length || !title || !author || !description) {
-      message.textContent = "Add an image, a title, an author and a description.";
+    if (!pictures.length) {
+      message.textContent = "Choose an image to publish.";
       return;
     }
     submit.disabled = true;
@@ -278,7 +346,7 @@ if (gallery) {
   });
 }
 
-// A short burst of filtered noise sounds like a paper sleeve sliding.
+// A falling pitch gives the sleeve a short, rounded pop.
 let audio;
 let soundOn = true;
 try { soundOn = localStorage.getItem("shelf-sound") !== "off"; } catch {}
@@ -294,22 +362,18 @@ function rustle() {
   try {
     audio ??= new AudioContext();
     audio.resume().catch(() => {});
-    const duration = 0.105;
-    const buffer = audio.createBuffer(1, Math.ceil(audio.sampleRate * duration), audio.sampleRate);
-    const samples = buffer.getChannelData(0);
-    for (let i = 0; i < samples.length; i++) {
-      const t = i / samples.length;
-      samples[i] = (Math.random() * 2 - 1) * Math.min(1, t * 20) * (1 - t) ** 2;
-    }
-    const source = audio.createBufferSource();
-    source.buffer = buffer;
-    const filter = audio.createBiquadFilter();
-    filter.type = "bandpass";
-    filter.frequency.value = 2300;
+    const now = audio.currentTime;
+    const source = audio.createOscillator();
+    source.type = "triangle";
+    source.frequency.setValueAtTime(540, now);
+    source.frequency.exponentialRampToValueAtTime(155, now + .055);
     const gain = audio.createGain();
-    gain.gain.value = 0.18;
-    source.connect(filter).connect(gain).connect(audio.destination);
-    source.start();
+    gain.gain.setValueAtTime(.0001, now);
+    gain.gain.exponentialRampToValueAtTime(.17, now + .004);
+    gain.gain.exponentialRampToValueAtTime(.0001, now + .082);
+    source.connect(gain).connect(audio.destination);
+    source.start(now);
+    source.stop(now + .085);
     return true;
   } catch { return false; }
 }

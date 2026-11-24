@@ -235,6 +235,59 @@ a:focus-visible, button:focus-visible {
 #plates { display: grid; gap: 1.5rem; margin-top: 2rem; }
 #plates img { max-width: 100%; width: auto; height: auto; max-height: 85vh; object-fit: contain; justify-self: start; }
 
+.wall-view .collection, .wall-view .collection-bar { max-width: 120rem; padding-inline: clamp(1rem, 2.8vw, 3.5rem); }
+.wall-view .collection-intro { padding-block: 1.4rem 1.7rem; display: flex; align-items: flex-end; gap: 1rem; flex-wrap: wrap; justify-content: space-between; }
+.wall-view .collection-intro h1 { font-size: clamp(2.8rem, 5vw, 6rem); }
+.wall-view .collection-intro p { display: none; }
+#category-index { display: flex; flex-wrap: wrap; gap: .45rem .9rem; }
+#category-index a { font-size: .86rem; text-decoration: none; padding-block: .3rem; }
+#category-index a:hover { text-decoration: underline; }
+.wall-view .gallery {
+  --wall-columns: 1;
+  --spacing: clamp(.9rem, 1.5vw, 1.75rem);
+  display: grid;
+  grid-template-columns: repeat(var(--wall-columns),minmax(0,1fr));
+  align-items: start;
+}
+@media (min-width: 40rem) { .wall-view .gallery { --wall-columns: 2; } }
+@media (min-width: 64rem) { .wall-view .gallery { --wall-columns: 3; } }
+@media (min-width: 90rem) { .wall-view .gallery { --wall-columns: 4; } }
+.wall-view .publication img { border-radius: .8rem; }
+.wall-view .publication h2 { margin: .5rem 0 .12rem; font-size: 1rem; }
+.wall-view .publication p { font-size: .82rem; }
+.recent { margin-top: clamp(2rem, 5vw, 5rem); }
+#recent-ideas { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: .85rem; padding-top: 1rem; }
+#recent-ideas a { text-decoration: none; }
+#recent-ideas img { width: 100%; aspect-ratio: 1.65; object-fit: cover; display: block; margin-bottom: .5rem; border-radius: .35rem; }
+.upload-view .collection { display: grid; grid-template-columns: minmax(0,1.3fr) minmax(0,.88fr); gap: 0 clamp(2rem,5vw,6rem); border-top: 1px solid var(--rule); }
+.upload-view .collection-intro { grid-column: 1; border: 0; padding-block: clamp(2rem,4vw,4.5rem) 2rem; }
+.upload-view .collection-intro h1 { font-size: clamp(3rem,6.5vw,7rem); }
+.upload-view #idea-form { grid-column: 1; max-width: none; }
+.upload-view #notice:empty { display: none; }
+#inspiration { grid-column: 2; grid-row: 1 / span 3; border-left: 1px solid var(--rule); padding-left: clamp(1.5rem,3vw,3rem); margin-block: clamp(2rem,4vw,4.5rem); }
+#inspiration h2 { font: 400 1.45rem/1 var(--display); text-transform: uppercase; margin-bottom: 1rem; }
+.moodboard { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .7rem; }
+.moodboard img { width: 100%; height: 100%; object-fit: cover; border-radius: .55rem; display: block; }
+.moodboard a { aspect-ratio: 1; min-width: 0; }
+.moodboard a:first-child, .moodboard a:last-child { grid-column: span 2; aspect-ratio: 2.25; }
+#idea-form .drop-area { position: relative; color: #202e45; padding: 2rem 1rem; justify-items: center; background: #e8edf3; border: 1px dashed #8797aa; border-radius: .55rem; cursor: pointer; }
+#idea-form .drop-area.over, #idea-form .drop-area:focus-within { background: #d6e2ee; outline: 2px solid #324966; }
+#idea-form .drop-area input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.choose-button { background: #233f68; color: white; padding: .55rem 1.2rem; font-size: .91rem; border-radius: .3rem; }
+.upload-mark { font-size: 2.1rem; line-height: 1; }
+#previews:empty, #form-message:empty { display: none; }
+#previews figure { position: relative; }
+#previews img { object-fit: cover; border-radius: .3rem; }
+#previews button { position: absolute; right: .25rem; top: .25rem; background: var(--paper); border-radius: 50%; width: 1.75rem; height: 1.75rem; text-decoration: none; }
+.optional-fields summary { cursor: pointer; font-size: .9rem; }
+.optional-fields label { margin-top: .8rem; }
+#idea-form button[type=submit] { justify-self: stretch; border-radius: .3rem; }
+@media (max-width: 48rem) {
+  .upload-view .collection { display: block; }
+  #inspiration { border-left: 0; border-top: 1px solid var(--rule); padding: 1.5rem 0; margin: 0; }
+  #recent-ideas { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+
 @media (max-width: 42rem) {
   .home { padding-top: 1rem; }
   .intro { display: grid; gap: 1.6rem; }

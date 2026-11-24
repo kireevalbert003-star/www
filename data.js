@@ -15,6 +15,12 @@ const collections = [
     name: "Photo",
     about: "Corners, intervals and small interruptions in the street.",
     posts: [
+      { image: "linen-field", date: "2026-11-24T12:06:00Z", width: 508, height: 679, title: "Wind in the linen", alt: "An ivory shirt moving in a field of dry grass", note: "A portrait study in the few seconds before the wind settles." },
+      { image: "alpine-hour", date: "2026-11-24T12:05:00Z", width: 508, height: 337, title: "Last light on the ridge", alt: "A snowy mountain catching the last pink light", note: "Two temperatures in one frame: cool snow and the last strip of sun." },
+      { image: "concrete-arc", date: "2026-11-24T12:04:00Z", width: 508, height: 679, title: "Under the spiral", alt: "A curved concrete stair rising against the sky", note: "Looking for a curve in a material that usually reads as weight." },
+      { image: "sea-line", date: "2026-11-24T12:03:00Z", width: 508, height: 337, title: "Break line", alt: "White foam on a deep green wave", note: "A coastline drawn and erased in the same second." },
+      { image: "red-room", date: "2026-11-24T12:02:00Z", width: 508, height: 679, title: "Red room", alt: "A blurred figure in an amber darkroom", note: "An experiment in how little detail a portrait needs." },
+      { image: "moving-shadow", date: "2026-11-24T12:01:00Z", width: 508, height: 337, title: "Moving shadow", alt: "Leaf shadows stretched across a warm terracotta wall", note: "Keeping the shadow in focus while its source stays outside the frame." },
       { image: "concrete-corner", title: "The corner opposite", alt: "A monochrome view looking up at a concrete facade", note: "A study of the thin line where two faces of a building meet." },
       { image: "court", title: "Between games", alt: "A green court crossed by a fence shadow", note: "The painted lines and the shadow make two different courts." },
       { image: "chairs", title: "After closing", alt: "Empty chairs with long dark shadows", note: "Part of a sequence about the spaces people leave behind." }
