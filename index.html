@@ -8,6 +8,7 @@
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="style.css">
   <script defer src="data.js"></script>
+  <script defer src="evolution.js"></script>
   <script defer src="script.js"></script>
 </head>
 <body>
@@ -38,9 +39,13 @@
         <button type="button" id="next" aria-label="Scroll shelf right" aria-controls="shelf-window">→</button>
       </div>
     </nav>
-    <section class="recent" aria-labelledby="recent-heading">
-      <div class="rack-heading"><h2 id="recent-heading">Recent ideas</h2><a href="category.html?view=all">View all</a></div>
-      <div id="recent-ideas"></div>
+    <section class="wall-view home-wall" aria-labelledby="home-wall-title">
+      <header class="collection-intro">
+        <h2 id="home-wall-title">All Ideas</h2>
+        <p>Unfinished thoughts, visual experiments, and everything in between.</p>
+      </header>
+      <div class="gallery" id="gallery"></div>
+      <p id="notice" role="status"></p>
     </section>
     <noscript>Enable JavaScript to browse the shelf.</noscript>
   </main>

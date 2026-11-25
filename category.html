@@ -8,34 +8,72 @@
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="style.css">
   <script defer src="data.js"></script>
+  <script defer src="evolution.js"></script>
   <script defer src="script.js"></script>
 </head>
 <body>
   <header class="collection-bar">
-    <a class="wordmark" href="index.html">In Progress</a>
+    <a class="wordmark" href="index.html" aria-label="In Progress — home">In Progress</a>
     <div class="collection-tools">
       <a href="category.html?view=all">All ideas</a>
       <a href="category.html?view=upload">Upload idea</a>
-      <button class="sound" type="button" aria-pressed="true">Sound on</button>
-      <a href="index.html">Back to shelf</a>
+      <details class="nav-more"><summary aria-label="More navigation">•••</summary>
+        <div><a href="index.html">Back to shelf</a>
+        <button class="sound" type="button" aria-pressed="true">Sound on</button></div>
+      </details>
     </div>
   </header>
   <main class="collection">
     <header class="collection-intro">
       <h1 id="collection-name">Collection</h1>
       <p id="collection-description"></p>
+      <a class="wall-upload" href="category.html?view=upload" hidden><span aria-hidden="true">＋</span> Upload idea</a>
       <a id="next-collection" hidden></a>
-      <nav id="category-index" aria-label="Browse collections" hidden></nav>
     </header>
     <div class="gallery" id="gallery"></div>
     <p id="notice" role="status"></p>
     <section id="detail" hidden>
       <a id="back-collection">Back to collection</a>
-      <p id="credits"></p>
-      <p id="tags"></p>
-      <div id="plates"></div>
+      <div class="detail-spread">
+        <div class="photo-column">
+          <div id="plates"></div>
+          <div class="photo-switch" hidden>
+            <button type="button" id="previous-photo" aria-label="Previous image">←</button>
+            <span id="photo-position" aria-live="polite"></span>
+            <button type="button" id="next-photo" aria-label="Next image">→</button>
+          </div>
+          <div id="photo-thumbs" hidden></div>
+          <nav id="version-line" aria-label="Version history"></nav>
+        </div>
+        <div class="photo-info">
+          <div class="detail-byline"><p id="detail-author"></p></div>
+          <p id="detail-description"></p>
+          <p id="lineage" hidden></p>
+          <div class="evolution-actions">
+            <a id="download-file" download>Download</a>
+            <a id="continue-idea" hidden>Continue This Idea</a>
+            <a id="add-version" hidden>Add version</a>
+          </div>
+          <details class="publication-notes"><summary>More details</summary>
+          <dl class="file-info">
+            <div><dt>Resolution</dt><dd id="photo-resolution"></dd></div>
+            <div><dt>Format</dt><dd id="photo-format"></dd></div>
+            <div id="quality-row" hidden><dt>Export quality</dt><dd id="photo-quality"></dd></div>
+            <div id="size-row"><dt>File size</dt><dd id="photo-size"></dd></div>
+          </dl>
+          <div class="source-links">
+            <a id="original-file" target="_blank" rel="noopener">Open original ↗</a>
+            <a id="log-file" target="_blank" rel="noopener noreferrer" hidden>Log original ↗</a>
+          </div>
+            <p id="credits"></p><p id="tags"></p>
+            <label class="permission-setting" hidden><input id="edit-permission" type="checkbox"> Allow others to continue this idea</label>
+          </details>
+        </div>
+      </div>
+      <details id="evolution-tree"><summary>Explore Evolution</summary><div></div></details>
     </section>
     <form id="idea-form" hidden>
+      <div id="source-preview" hidden></div>
       <label class="drop-area">
         <span class="upload-mark" aria-hidden="true">↑</span>
         <strong>Drop your images here</strong>
@@ -44,14 +82,23 @@
       </label>
       <div id="previews"></div>
       <label>Title<input name="title" placeholder="From your image name" maxlength="140"></label>
-      <label>Description<textarea name="description" placeholder="A note, if you like" rows="2" maxlength="2000"></textarea></label>
       <label>Category<select name="category" required></select></label>
-      <details class="optional-fields"><summary>Credit &amp; tags</summary>
+      <details class="optional-fields"><summary>Notes &amp; credit</summary>
+        <label>Description<textarea name="description" rows="2" maxlength="2000"></textarea></label>
         <label>Author<input name="author" placeholder="Anonymous" maxlength="80"></label>
+      </details>
+      <details class="optional-fields"><summary>Publishing options</summary>
         <label>Tags<input name="tags" placeholder="Light, colour, texture" maxlength="250"></label>
+        <label>Creative status<select name="status">
+          <option value="">Unspecified</option><option>Concept</option><option>In Progress</option>
+          <option>Finished</option>
+        </select></label>
+        <label id="choose-source" hidden>Continue an idea<select><option value="">Independent idea</option></select></label>
+        <label class="permission-setting"><input name="allowContinuation" type="checkbox"> Allow others to continue this idea</label>
       </details>
       <p role="status" id="form-message"></p>
       <button type="submit">Publish idea</button>
+      <p class="local-note">Saved in this browser.</p>
     </form>
     <aside id="inspiration" hidden>
       <h2>Inspiration</h2>
@@ -59,14 +106,27 @@
     </aside>
     <noscript>Enable JavaScript to view this collection.</noscript>
   </main>
-  <template id="publication">
-    <article class="publication">
-      <a class="post-link">
-        <img loading="lazy" decoding="async" alt="">
-        <h2></h2>
-        <p></p>
-      </a>
-    </article>
+  <template id="photo-settings">
+    <figcaption>
+      <strong class="upload-filename"></strong>
+      <p class="export-info" aria-live="polite"></p>
+      <details class="export-settings"><summary>Photo settings</summary>
+        <div class="export-fields">
+          <label>Long edge (px)<input class="export-edge" type="number" min="1" step="1"></label>
+          <label>Format<select class="export-format"></select></label>
+          <label>Quality<select class="export-quality">
+            <option value="">Auto</option><option value="0.95">High · 95%</option>
+            <option value="0.85">Balanced · 85%</option><option value="0.65">Compact · 65%</option>
+          </select></label>
+        </div>
+        <p class="export-note"></p>
+      </details>
+    </figcaption>
+  </template>
+  <template id="log-source-field">
+    <details class="log-source-field"><summary>Log source</summary>
+      <label>Original file URL<input type="url" pattern="https?://.+" placeholder="https://"></label>
+    </details>
   </template>
 </body>
 </html>
