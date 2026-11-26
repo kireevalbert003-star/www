@@ -162,9 +162,24 @@ async function showPublications() {
   let localPosts = [];
   try { localPosts = await readLocalPosts(); }
   catch { document.querySelector("#notice").textContent = "Local storage is unavailable. Showing studio publications."; }
-  const posts = [...localPosts, ...samplePosts];
+  let cloudPosts = [];
+  if (cloudEnabled) {
+    try {
+      await connectCloud();
+      cloudPosts = await readCloudPosts();
+      offerLocalImport(localPosts, cloudPosts);
+    } catch { document.querySelector("#notice").textContent = "Cloud storage is temporarily unavailable."; }
+  }
+  const cloudIds = new Set(cloudPosts.map(post => post.id));
+  const posts = [...cloudPosts, ...localPosts.filter(post => !cloudIds.has(post.id)), ...samplePosts];
   if (!shelf && params.get("view") === "upload") {
     gallery.hidden = true;
+    if (cloudEnabled && !cloudUser) {
+      setIntro("Upload idea", "Sign in to publish an idea to the public gallery.");
+      const account = document.querySelector("#cloud-account");
+      if (!account.hidden) account.open = true;
+      return;
+    }
     const revise = params.has("revise");
     const continuation = params.has("continue");
     let source, version;
@@ -286,7 +301,7 @@ function setupPhotoViewer(pictures) {
     full.append(image);
     plates.replaceChildren(full);
     Array.from(thumbs.children).forEach((button, i) => button.setAttribute("aria-pressed", String(i === index)));
-    original.href = image.src;
+    original.href = picture.originalSrc || image.src;
     if (picture.originalBlob) {
       if (!pictureUrls.has(picture.originalBlob)) pictureUrls.set(picture.originalBlob, URL.createObjectURL(picture.originalBlob));
       original.href = pictureUrls.get(picture.originalBlob);
@@ -575,6 +590,7 @@ function setupUpload(sourcePost, sourceVersion, revise, posts) {
   const message = document.querySelector("#form-message");
   const submit = form.querySelector("button[type=submit]");
   form.hidden = false;
+  if (cloudEnabled) form.querySelector(".local-note").textContent = "Published ideas are visible to everyone.";
   document.querySelector("#inspiration").hidden = Boolean(sourcePost);
   for (const id of ["alpine-hour", "concrete-arc", "linen-field", "sea-line"]) {
     const post = samplePosts.find(item => item.id === id);
@@ -714,7 +730,11 @@ function setupUpload(sourcePost, sourceVersion, revise, posts) {
         tags: fields.tags.value.split(",").map(tag => tag.trim()).filter(Boolean),
         images: pictures.slice()
       };
-      if (sourcePost) await saveContinuation(post, sourcePost.id, sourceVersion.id);
+      if (cloudEnabled) {
+        if (sourcePost) post.parent = { id: sourcePost.id, versionId: sourceVersion.id };
+        await saveCloudPost(post);
+      }
+      else if (sourcePost) await saveContinuation(post, sourcePost.id, sourceVersion.id);
       else await savePost(post);
       location.assign(sourcePost ? postUrl(post) : collectionUrl(post.category));
     } catch (error) {

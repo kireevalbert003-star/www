@@ -8,10 +8,24 @@
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="style.css">
   <script defer src="data.js"></script>
+  <script defer src="cloud-config.js"></script>
+  <script defer src="cloud.js"></script>
   <script defer src="evolution.js"></script>
   <script defer src="script.js"></script>
 </head>
 <body>
+  <details id="cloud-account" hidden>
+    <summary>Account</summary>
+    <form>
+      <label>Email <input name="email" type="email" autocomplete="email" required></label>
+      <label>Password <input name="password" type="password" autocomplete="current-password" required></label>
+      <button value="login">Sign in</button>
+      <button value="register">Create account</button>
+    </form>
+    <button type="button" data-sign-out hidden>Sign out</button>
+    <button type="button" data-import hidden>Publish local ideas</button>
+    <p role="status"></p>
+  </details>
   <header class="collection-bar">
     <a class="wordmark" href="index.html" aria-label="In Progress — home">In Progress</a>
     <div class="collection-tools">

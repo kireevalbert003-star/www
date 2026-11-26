@@ -471,3 +471,22 @@ summary::-webkit-details-marker { display: none; }
   .sleeve:is(:hover, :focus-visible, :active) { transform: none; }
 }
 
+#cloud-account {
+  max-width: 90rem;
+  margin: 1rem auto 0;
+  padding-inline: var(--gutter);
+  font-size: .9rem;
+}
+#cloud-account summary { cursor: pointer; }
+#cloud-account form { display: flex; flex-wrap: wrap; align-items: end; gap: .6rem; margin-block: .7rem; }
+#cloud-account label { display: grid; gap: .25rem; }
+#cloud-account input, #cloud-account button {
+  color: inherit;
+  background: #faf9f4;
+  padding: .5rem;
+  border: 1px solid var(--rule);
+  border-radius: .5rem;
+  font: inherit;
+}
+#cloud-account button { cursor: pointer; margin-top: .35rem; }
+#cloud-account p:not(:empty) { margin-top: .5rem; }

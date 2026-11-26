@@ -20,6 +20,8 @@ function composeUrl(mode, post, version) {
 
 let localCreatorId;
 function isOwned(post) {
+  if (post.cloud) return Boolean(cloudUser && post.creatorId === cloudUser.id);
+  if (cloudEnabled) return false;
   return Boolean(localCreatorId && (post.creatorId || localCreatorId) === localCreatorId);
 }
 
@@ -49,6 +51,7 @@ async function writeFromSource(id, action) {
 }
 
 function editOwnedIdea(id, change) {
+  if (cloudEnabled) return editCloudPost(id, change);
   return writeFromSource(id, (store, post) => {
     if (!isOwned(post)) throw new IdeaError("Only the creating browser can edit this idea.");
     post.creatorId = localCreatorId;
